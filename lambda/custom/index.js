@@ -155,18 +155,22 @@ function httpGet(myData, callback) {
                     var ratingscount = a.Ratings.length;
                     console.log("No. of ratings: " +ratingscount);
 
+                    console.log(a.Ratings[0].Value);
+                    console.log(a.Ratings[1].Value);
+                    console.log(a.Ratings[2].Value);
+
                     if (ratingscount == '1') {
                         callback(a.Title, a.Year, a.Director, a.Plot, a.imdbRating, "", "");
 
                     } else if (ratingscount == '2'){
 
-                        var rt = a.Ratings[2].Value.match(/^\d+\W+\d/);
+                        var rt = a.Ratings[2].Value;
                         callback(a.Title, a.Year, a.Director, a.Plot, a.imdbRating, rt, "");
 
                     } else {
 
-                        var rt = a.Ratings[2].Value.match(/^\d+\W+\d/);
-                        var metac = a.Ratings[3].Value.match(/^\d+\W+\d/);
+                        var rt = a.Ratings[1].Value;
+                        var metac = a.Ratings[2].Value.match(/^\d*/);
                         callback(a.Title, a.Year, a.Director, a.Plot, a.imdbRating, rt, metac);                      
                     }
 
