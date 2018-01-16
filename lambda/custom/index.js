@@ -1,87 +1,183 @@
-/* eslint-disable  func-names */
-/* eslint quote-props: ["error", "consistent"]*/
-/**
- * This sample demonstrates a simple skill built with the Amazon Alexa Skills
- * nodejs skill development kit.
- * This sample supports multiple lauguages. (en-US, en-GB, de-DE).
- * The Intent Schema, Custom Slots and Sample Utterances for this skill, as well
- * as testing instructions are located at https://github.com/alexa/skill-sample-nodejs-fact
- **/
+// alexa-cookbook sample code
 
-'use strict';
-const Alexa = require('alexa-sdk');
+// There are three sections, Text Strings, Skill Code, and Helper Function(s).
+// You can copy and paste the entire file contents as the code for a new Lambda function,
+//  or copy & paste section #3, the helper function, to the bottom of your existing Lambda code.
 
-//=========================================================================================================================================
-//TODO: The items below this comment need your attention.
-//=========================================================================================================================================
 
-//Replace with your app ID (OPTIONAL).  You can find this value at the top of your skill's page on http://developer.amazon.com.
-//Make sure to enclose your value in quotes, like this: const APP_ID = 'amzn1.ask.skill.bb4045e6-b3e8-4133-b650-72923c5980f1';
-const APP_ID = undefined;
+// 1. Text strings =====================================================================================================
+//    Modify these strings and messages to change the behavior of your Lambda function
 
-const SKILL_NAME = 'Space Facts';
-const GET_FACT_MESSAGE = "Here's your fact: ";
-const HELP_MESSAGE = 'You can say tell me a space fact, or, you can say exit... What can I help you with?';
-const HELP_REPROMPT = 'What can I help you with?';
-const STOP_MESSAGE = 'Goodbye!';
 
-//=========================================================================================================================================
-//TODO: Replace this data with your own.  You can find translations of this data at http://github.com/alexa/skill-sample-node-js-fact/lambda/data
-//=========================================================================================================================================
-const data = [
-    'A year on Mercury is just 88 days long.',
-    'Despite being farther from the Sun, Venus experiences higher temperatures than Mercury.',
-    'Venus rotates counter-clockwise, possibly because of a collision in the past with an asteroid.',
-    'On Mars, the Sun appears about half the size as it does on Earth.',
-    'Earth is the only planet not named after a god.',
-    'Jupiter has the shortest day of all the planets.',
-    'The Milky Way galaxy will collide with the Andromeda Galaxy in about 5 billion years.',
-    'The Sun contains 99.86% of the mass in the Solar System.',
-    'The Sun is an almost perfect sphere.',
-    'A total solar eclipse can happen once every 1 to 2 years. This makes them a rare event.',
-    'Saturn radiates two and a half times more energy into space than it receives from the sun.',
-    'The temperature inside the Sun can reach 15 million degrees Celsius.',
-    'The Moon is moving approximately 3.8 cm away from our planet every year.',
-];
+const welcomeRePrompt = "Please provide your input"
 
-//=========================================================================================================================================
-//Editing anything below this line might break your skill.
-//=========================================================================================================================================
+// 2. Skill Code =======================================================================================================
+
+
+var Alexa = require('alexa-sdk');
 
 exports.handler = function(event, context, callback) {
-    var alexa = Alexa.handler(event, context);
-    alexa.appId = APP_ID;
+    const alexa = Alexa.handler(event, context);
+
+    // alexa.appId = 'amzn1.echo-sdk-ams.app.1234';
+    // alexa.dynamoDBTableName = 'YourTableName'; // creates new table for session.attributes
+
     alexa.registerHandlers(handlers);
     alexa.execute();
 };
 
 const handlers = {
     'LaunchRequest': function () {
-        this.emit('GetNewFactIntent');
-    },
-    'GetNewFactIntent': function () {
-        const factArr = data;
-        const factIndex = Math.floor(Math.random() * factArr.length);
-        const randomFact = factArr[factIndex];
-        const speechOutput = GET_FACT_MESSAGE + randomFact;
-
-        this.response.cardRenderer(SKILL_NAME, randomFact);
-        this.response.speak(speechOutput);
+        this.response.speak('Welcome to the Movie Decider Skill. You can listen to a random poem by saying: Alexa, tell me a poem. ' + ' Or, you can listen to a poem of your favorite author by saying: Alexa, tell me a poem by Oscar Wilde. Just replace the poet name with your favorite authors name. ').listen(welcomeRePrompt);
         this.emit(':responseReady');
     },
-    'AMAZON.HelpIntent': function () {
-        const speechOutput = HELP_MESSAGE;
-        const reprompt = HELP_REPROMPT;
+    
+    'Unhandled': function() {
+        this.emit(':ask', 'Sorry, Given Movie name cannot be found. Please retry with another Poet name. ');
+    },
 
+    
+    'Watch_or_not': function () {
+        
+        var Movie = this.event.request.intent.slots.Movie.value;
+        console.log("Movie Name from Slot: " + Movie);
+        
+        httpGet(Movie,  (myResult1, myResult2, myResult3, myResult4, imdb, rottentomatoes, metacritic) => {
+                console.log("sent     : " + Movie);
+                console.log("received : " + myResult1 + ", " + myResult2 + ", " + myResult3 + ", " + myResult4 + ", " + imdb + ", " + rottentomatoes + ", " + metacritic);
+                
+                if (myResult2 == "False") {
+                    this.response.speak('Sorry, Given Movie cannot be found. Please retry with another Movie name.');
+                    this.emit(':responseReady');
+                    
+                } else {
+                
+                    this.response.speak('Movie Found. The movie: ' + myResult1 + ', ' + ' released in: ' + myResult2 + ', is directed by: ' + myResult3 +  ' and has the plot as follows: ' + myResult4);
+                    this.emit(':responseReady');
+                }
+            }
+        );
+
+    },
+    
+    'AMAZON.HelpIntent': function () {
+        speechOutput = "I'm here to help you. You can listen to a random poem by saying: Alexa, tell me a poem. Or, you can listen to a poem of your favorite author by saying: Alexa, tell me a poem by Oscar Wilde. Just replace the poet name with your favorite authors name. ";
+        reprompt = "I'm waiting for your input ";
         this.response.speak(speechOutput).listen(reprompt);
         this.emit(':responseReady');
     },
+    
     'AMAZON.CancelIntent': function () {
-        this.response.speak(STOP_MESSAGE);
+        speechOutput = "Cancelling the current operation.";
+        this.response.speak(speechOutput);
         this.emit(':responseReady');
     },
+    
     'AMAZON.StopIntent': function () {
-        this.response.speak(STOP_MESSAGE);
+        speechOutput = "Thank you for allowing me to tell you a poem. Exiting for now!";
+        this.response.speak(speechOutput);
+        this.emit(':responseReady');
+    },
+    
+    'SessionEndedRequest': function () {
+        var speechOutput = "Sorry, your session is over.";
+        this.response.speak(speechOutput);
         this.emit(':responseReady');
     },
 };
+
+
+//    END of Intent Handlers {} ========================================================================================
+// 3. Helper Function  =================================================================================================
+
+
+var http = require('http');
+// https is a default part of Node.JS.  Read the developer doc:  https://nodejs.org/api/https.html
+// try other APIs such as the current bitcoin price : https://btc-e.com/api/2/btc_usd/ticker  returns ticker.last
+
+function httpGet(myData, callback) {
+
+    // GET is a web service request that is fully defined by a URL string
+    // Try GET in your browser:
+    // https://cp6gckjt97.execute-api.us-east-1.amazonaws.com/prod/stateresource?usstate=New%20Jersey
+
+    console.log("myData: " + myData);
+    
+    
+    // Update these options with the details of the web service you would like to call
+    var options = {
+        host: 'omdbapi.com',
+        path: '/?t=' + encodeURIComponent(myData) +'&apikey=458d4ffb',
+        method: 'GET',
+
+        // if x509 certs are required:
+        // key: fs.readFileSync('certs/my-key.pem'),
+        // cert: fs.readFileSync('certs/my-cert.pem')
+    };
+
+    var req = http.request(options, res => {
+        res.setEncoding('utf8');
+        var returnData = "";
+
+        res.on('data', chunk => {
+            returnData = returnData + chunk;
+        });
+        
+        
+        res.on('end', () => {
+            // we have now received the raw return data in the returnData variable.
+            // We can see it in the log output via:
+            // console.log(JSON.stringify(returnData))
+            // we may need to parse through it to extract the needed data
+            
+            console.log("returnData: " + returnData);
+        
+            var a = JSON.parse(returnData);
+            var desc = JSON.parse(returnData);
+            var total = JSON.parse(returnData).length;
+            
+            console.log("Status: " + a.Response);
+            
+            if (a.Response == "False") {
+                
+                console.log("Not Found");
+                callback("", a.Response, "", "");
+                
+            } else {
+                
+
+                    console.log("title: " + a.Title);
+                    console.log("year: " + a.Year);
+                    console.log("director: " + a.Director);
+                    console.log("plot: " + a.Plot);     
+                    console.log("imdb rating: " + a.imdbRating);
+
+                    var ratingscount = a.Ratings.length;
+                    console.log("No. of ratings: " +ratingscount);
+
+                    if (ratingscount == '1') {
+                        callback(a.Title, a.Year, a.Director, a.Plot, a.imdbRating, "", "");
+
+                    } else if (ratingscount == '2'){
+
+                        var rt = a.Ratings[2].Value.match(/^\d+\W+\d/);
+                        callback(a.Title, a.Year, a.Director, a.Plot, a.imdbRating, rt, "");
+
+                    } else {
+
+                        var rt = a.Ratings[2].Value.match(/^\d+\W+\d/);
+                        var metac = a.Ratings[3].Value.match(/^\d+\W+\d/);
+                        callback(a.Title, a.Year, a.Director, a.Plot, a.imdbRating, rt, metac);                      
+                    }
+
+
+                    
+                }
+            
+        });
+
+    });
+    req.end();
+
+}
+
