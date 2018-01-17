@@ -160,18 +160,25 @@ function httpGet(myData, callback) {
                     console.log(a.Ratings[2].Value);
 
                     if (ratingscount == '1') {
-                        callback(a.Title, a.Year, a.Director, a.Plot, a.imdbRating, "", "");
+                        callback(a.Title, a.Year, a.Director, a.Plot, Number(a.imdbRating), "", "");
 
                     } else if (ratingscount == '2'){
 
-                        var rt = a.Ratings[2].Value;
-                        callback(a.Title, a.Year, a.Director, a.Plot, a.imdbRating, rt, "");
+                        var rt = a.Ratings[2].Value.match(/^\d*/);
+                        callback(a.Title, a.Year, a.Director, a.Plot,  Number(a.imdbRating), Number(rt[0]), "");
 
                     } else {
 
-                        var rt = a.Ratings[1].Value;
+                        var rt = a.Ratings[1].Value.match(/^\d*/);
                         var metac = a.Ratings[2].Value.match(/^\d*/);
-                        callback(a.Title, a.Year, a.Director, a.Plot, a.imdbRating, rt, metac);                      
+                        
+                    //    console.log(rt[0]);
+                    //    console.log(metac[0]);
+                    //    console.log(typeof a.imdbRating);
+                    //    console.log(typeof Number(metac), metac[0], Number(metac[0]));
+                    //    console.log(typeof rt);
+                        
+                        callback(a.Title, a.Year, a.Director, a.Plot, Number(a.imdbRating), Number(rt[0]), Number(metac[0]));                      
                     }
 
 
